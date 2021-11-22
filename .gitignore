@@ -1,0 +1,5 @@
+awsomepets-serverless/.aws-sam/*
+.DS_Store
+awsomepets-serverless/src/order/ProcessPaymentFunction/node_modules/*
+awsomepets-serverless/package-lock.json
+awsomepets-serverless/src/order/ProcessPaymentFunction/package-lock.json

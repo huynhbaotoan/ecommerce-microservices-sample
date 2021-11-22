@@ -1,0 +1,6 @@
+{
+  "endpoints": {
+    "catalogue": "/catalogue.json",
+    "placeOrder": "https://z2jsgnki3g.execute-api.ap-southeast-1.amazonaws.com/v1/order"
+  }
+}

@@ -1,0 +1,12 @@
+version = 0.1
+[default]
+[default.deploy]
+[default.deploy.parameters]
+stack_name = "saga-test-m2m"
+s3_bucket = "aws-sam-cli-managed-default-samclisourcebucket-1xy7tgc7jniix"
+s3_prefix = "saga-test-m2m"
+region = "ap-southeast-1"
+capabilities = "CAPABILITY_IAM"
+parameter_overrides = "StageName=\"v1\""
+confirm_changeset = true
+image_repositories = []
