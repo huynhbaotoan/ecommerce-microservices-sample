@@ -170,6 +170,23 @@ Resources:
         Properties:
             ServiceToken: !GetAtt PopulateCatalogueFunction.Arn
 
+    FetchCatalogueFunction:
+        Type: "AWS::Serverless::Function"
+        Properties:
+            FunctionName: "FetchCatalogueFunction"
+            Description: "Fetch the list of catalogs"
+            Environment:
+                Variables:
+                    CATALOGUE_TABLE: !Ref CatalogueTable
+            Handler: "index.handler"
+            CodeUri: src/catalog/FetchCatalogueFunction/
+            MemorySize: 128
+            Runtime: "nodejs12.x"
+            Timeout: 3
+            Policies:
+                - DynamoDBCrudPolicy:
+                      TableName: !Ref CatalogueTable
+
     CancelOrderFunction:
         Type: "AWS::Serverless::Function"
         Properties:
