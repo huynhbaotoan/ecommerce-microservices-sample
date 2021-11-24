@@ -11,7 +11,7 @@
       "Catch": [
         {
           "ErrorEquals": [
-            "ErrReserveInventory"
+            "ErrUpdateInventory"
           ],
           "ResultPath": "$.error",
           "Next": "CancelOrder"
@@ -54,7 +54,7 @@
     "ReleaseInventory": {
       "Comment": "Task to release order items back to inventory",
       "Type": "Task",
-      "Resource": "${ReleaseInventoryFunctionArn}",
+      "Resource": "${ReleaseInventoryNewFunctionArn}",
       "TimeoutSeconds": 10,
       "Retry": [
         {

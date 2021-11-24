@@ -225,6 +225,40 @@ Resources:
                       TableName: !Ref OrdersTable
                 - StepFunctionsExecutionPolicy:
                       StateMachineName: !GetAtt StepFunctionsStateMachine.Name
+    
+    UpdateInventoryFunction:
+        Type: "AWS::Serverless::Function"
+        Properties:
+            Description: "Update items to inventory"
+            Environment:
+                Variables:
+                    CATALOGUE_TABLE: !Ref CatalogueTable
+            FunctionName: "UpdateInventoryFunction"
+            Handler: "index.handler"
+            CodeUri: src/order/UpdateInventoryFunction/
+            MemorySize: 128
+            Runtime: "nodejs12.x"
+            Timeout: 3
+            Policies:
+                - DynamoDBCrudPolicy:
+                      TableName: !Ref CatalogueTable
+
+    ReleaseInventoryNewFunction:
+        Type: "AWS::Serverless::Function"
+        Properties:
+            Description: "Release items back to be available to inventory"
+            Environment:
+                Variables:
+                    CATALOGUE_TABLE: !Ref CatalogueTable
+            FunctionName: "ReleaseInventoryNewFunction"
+            Handler: "index.handler"
+            CodeUri: src/order/ReleaseInventoryNewFunction/
+            MemorySize: 128
+            Runtime: "nodejs12.x"
+            Timeout: 3
+            Policies:
+                - DynamoDBCrudPolicy:
+                      TableName: !Ref CatalogueTable
 
     ReleaseInventoryFunction:
         Type: "AWS::Serverless::Function"
@@ -521,8 +555,8 @@ Resources:
             Name: "OrderOrchestrator"
             DefinitionUri: statemachine/order-orchestrator.asl.json
             DefinitionSubstitutions:
-                ReserveInventoryFunctionArn: !GetAtt ReserveInventoryFunction.Arn
-                ReleaseInventoryFunctionArn: !GetAtt ReleaseInventoryFunction.Arn
+                ReserveInventoryFunctionArn: !GetAtt UpdateInventoryFunction.Arn
+                ReleaseInventoryNewFunctionArn: !GetAtt ReleaseInventoryNewFunction.Arn
                 ProcessPaymentFunctionArn: !GetAtt ProcessPaymentFunction.Arn
                 ProcessRefundFunctionArn: !GetAtt ProcessRefundFunction.Arn
                 CompleteOrderFunctionArn: !GetAtt CompleteOrderFunction.Arn
@@ -532,9 +566,9 @@ Resources:
             Type: "STANDARD"
             Policies:
                 - LambdaInvokePolicy:
-                      FunctionName: !Ref ReserveInventoryFunction
+                      FunctionName: !Ref UpdateInventoryFunction
                 - LambdaInvokePolicy:
-                      FunctionName: !Ref ReleaseInventoryFunction
+                      FunctionName: !Ref ReleaseInventoryNewFunction
                 - LambdaInvokePolicy:
                       FunctionName: !Ref ProcessPaymentFunction
                 - LambdaInvokePolicy:
