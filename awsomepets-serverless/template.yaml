@@ -187,6 +187,23 @@ Resources:
                 - DynamoDBCrudPolicy:
                       TableName: !Ref CatalogueTable
 
+    ValidateInventoryFunction:
+        Type: "AWS::Serverless::Function"
+        Properties:
+            FunctionName: "ValidateInventoryFunction"
+            Description: "Fetch the list of catalogs"
+            Environment:
+                Variables:
+                    CATALOGUE_TABLE: !Ref CatalogueTable
+            Handler: "index.handler"
+            CodeUri: src/catalog/ValidateInventoryFunction/
+            MemorySize: 128
+            Runtime: "nodejs12.x"
+            Timeout: 3
+            Policies:
+                - DynamoDBCrudPolicy:
+                      TableName: !Ref CatalogueTable
+
     CancelOrderFunction:
         Type: "AWS::Serverless::Function"
         Properties:
