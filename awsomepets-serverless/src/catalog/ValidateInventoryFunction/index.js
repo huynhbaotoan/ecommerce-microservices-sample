@@ -35,6 +35,7 @@ exports.handler = async (event) => {
   var params = {
     TableName : catalogueTable,
     FilterExpression: filtedConditionWithQuantity,
+    ConsistentRead: true,
     ExpressionAttributeValues: expressionAttributeValues
   }
 

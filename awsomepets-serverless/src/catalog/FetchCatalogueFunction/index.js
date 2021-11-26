@@ -7,7 +7,9 @@ exports.handler = async (event) => {
 
   var params = {
     TableName : catalogueTable,
+    //attribute_not_exists(quantity) AND 
     FilterExpression: "itemsInStock > :numberOfStock",
+    ConsistentRead: true,
     ExpressionAttributeValues: {
          ":numberOfStock": 0
     }
