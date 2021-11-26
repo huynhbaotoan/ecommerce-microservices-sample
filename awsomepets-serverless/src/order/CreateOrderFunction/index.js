@@ -37,7 +37,7 @@ exports.handler = async (event, context) => {
   }
   // Create new order JSON
   const timestamp = Date.now();
-  const orderId = context.awsRequestId;
+  const orderId = event.orderId != null && event.orderId != "" ? event.orderId : context.awsRequestId;
   let order = {
     orderId: orderId,
     status: "new",
