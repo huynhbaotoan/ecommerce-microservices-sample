@@ -253,6 +253,7 @@ Resources:
             Environment:
                 Variables:
                     CATALOGUE_TABLE: !Ref CatalogueTable
+                    INVENTORY_TABLE: !Ref InventoryTable
             FunctionName: "UpdateInventoryFunction"
             Handler: "index.handler"
             CodeUri: src/order/UpdateInventoryFunction/
@@ -262,6 +263,8 @@ Resources:
             Policies:
                 - DynamoDBCrudPolicy:
                       TableName: !Ref CatalogueTable
+                - DynamoDBCrudPolicy:
+                      TableName: !Ref InventoryTable
 
     ReleaseInventoryNewFunction:
         Type: "AWS::Serverless::Function"
