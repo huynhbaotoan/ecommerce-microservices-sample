@@ -90,14 +90,18 @@ exports.handler = async (event, context) => {
           };
         }
       }
-      else
+      else {
+        if(bookingQuantity[item.sk] == null)
+          bookingQuantity[item.sk] = 0;
         bookingQuantity[item.sk] += item.quantity;
+      }
     });
     
     let orderItems = [];
     result.Items.forEach(item => {
-      if(item.itemsInStock < ids[item.id])
+      if(item.itemsInStock - (bookingQuantity[item.id] == null ? 0 : bookingQuantity[item.id]) < ids[item.id]) {
         orderItems.push(item);
+      }
     });
 
     if(orderItems.length > 0)
