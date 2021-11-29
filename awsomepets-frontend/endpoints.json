@@ -1,7 +1,6 @@
 {
   "endpoints": {
-    "catalogue": "https://z2jsgnki3g.execute-api.ap-southeast-1.amazonaws.com/v1/catalogue",
-    "placeOrder": "https://z2jsgnki3g.execute-api.ap-southeast-1.amazonaws.com/v1/order",
-    "inventory": "https://z2jsgnki3g.execute-api.ap-southeast-1.amazonaws.com/v1/inventory"
+    "catalogue": "/catalogue",
+    "placeOrder": "https://z2jsgnki3g.execute-api.ap-southeast-1.amazonaws.com/v1/order"
   }
 }
