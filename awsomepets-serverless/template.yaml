@@ -187,17 +187,17 @@ Resources:
                 - DynamoDBCrudPolicy:
                       TableName: !Ref CatalogueTable
 
-    ValidateInventoryFunction:
+    ValidateBookingInventoryFunction:
         Type: "AWS::Serverless::Function"
         Properties:
-            FunctionName: "ValidateInventoryFunction"
+            FunctionName: "ValidateBookingInventoryFunction"
             Description: "Fetch the list of catalogs"
             Environment:
                 Variables:
                     CATALOGUE_TABLE: !Ref CatalogueTable
                     INVENTORY_TABLE: !Ref InventoryTable
             Handler: "index.handler"
-            CodeUri: src/catalog/ValidateInventoryFunction/
+            CodeUri: src/catalog/ValidateBookingInventoryFunction/
             MemorySize: 128
             Runtime: "nodejs12.x"
             Timeout: 3
@@ -206,6 +206,23 @@ Resources:
                       TableName: !Ref CatalogueTable
                 - DynamoDBCrudPolicy:
                       TableName: !Ref InventoryTable
+
+    ValidateInventoryFunction:
+        Type: "AWS::Serverless::Function"
+        Properties:
+            FunctionName: "ValidateInventoryFunction"
+            Description: "Fetch the list of catalogs"
+            Environment:
+                Variables:
+                    CATALOGUE_TABLE: !Ref CatalogueTable
+            Handler: "index.handler"
+            CodeUri: src/catalog/ValidateInventoryFunction/
+            MemorySize: 128
+            Runtime: "nodejs12.x"
+            Timeout: 3
+            Policies:
+                - DynamoDBCrudPolicy:
+                      TableName: !Ref CatalogueTable
 
     CancelOrderFunction:
         Type: "AWS::Serverless::Function"
@@ -578,7 +595,7 @@ Resources:
             Name: "OrderOrchestrator"
             DefinitionUri: statemachine/order-orchestrator.asl.json
             DefinitionSubstitutions:
-                ReserveInventoryFunctionArn: !GetAtt UpdateInventoryFunction.Arn
+                UpdateInventoryFunctionArn: !GetAtt UpdateInventoryFunction.Arn
                 ReleaseInventoryNewFunctionArn: !GetAtt ReleaseInventoryNewFunction.Arn
                 ProcessPaymentFunctionArn: !GetAtt ProcessPaymentFunction.Arn
                 ProcessRefundFunctionArn: !GetAtt ProcessRefundFunction.Arn

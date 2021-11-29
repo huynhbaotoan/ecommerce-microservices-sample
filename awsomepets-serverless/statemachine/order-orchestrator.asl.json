@@ -1,12 +1,12 @@
 {
   "Comment": "Awsomepets PoC Order Orchestrator",
-  "StartAt": "ReserveInventory",
+  "StartAt": "UpdateInventory",
   "TimeoutSeconds": 10,
   "States": {
-    "ReserveInventory": {
+    "UpdateInventory": {
       "Comment": "Task to reserve order items in inventory",
       "Type": "Task",
-      "Resource": "${ReserveInventoryFunctionArn}",
+      "Resource": "${UpdateInventoryFunctionArn}",
       "TimeoutSeconds": 10,
       "Catch": [
         {
