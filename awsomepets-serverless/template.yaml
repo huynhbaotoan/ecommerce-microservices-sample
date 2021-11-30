@@ -588,6 +588,8 @@ Resources:
             DisplayName: ""
             TopicName: "OrderSagaSuccessTopic"
 
+    StepFunctionsStateMachineLogs:
+        Type: AWS::Logs::LogGroup
 
     StepFunctionsStateMachine:
         Type: "AWS::Serverless::StateMachine"
@@ -604,6 +606,12 @@ Resources:
                 OrderWSCallbackFunctionArn: !GetAtt OrderWSCallbackFunction.Arn
                 OrderSagaFailTopicArn: "arn:aws:sns:${AWS::Region}:${AWS::AccountId}:${OrderSagaFailTopic.TopicName}"
             Type: "STANDARD"
+            Logging:
+                Destinations:
+                    - CloudWatchLogsLogGroup: 
+                            LogGroupArn: !GetAtt StepFunctionsStateMachineLogs.Arn
+                IncludeExecutionData: true
+                Level: "ALL"
             Policies:
                 - LambdaInvokePolicy:
                       FunctionName: !Ref UpdateInventoryFunction
@@ -621,6 +629,7 @@ Resources:
                       FunctionName: !Ref OrderWSCallbackFunction
                 - SNSPublishMessagePolicy:
                       TopicName: !GetAtt OrderSagaFailTopic.TopicName
+                - CloudWatchLogsFullAccess
 
     ApiGatewayConfig:
         Type: "AWS::ApiGateway::Account"
