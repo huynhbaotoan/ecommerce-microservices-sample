@@ -75,7 +75,7 @@
               }
             }
           ],
-          "Next": "ProcessRefund"
+          "Next": "InventoryErrorAddedPass"
         },
         {
           "And": [
@@ -103,10 +103,21 @@
               "IsPresent": true
             }
           ],
-          "Next": "CancelOrder"
+          "Next": "FailedAllPass"
         }
       ],
       "Default": "CompleteOrder"
+    },
+    "InventoryErrorAddedPass": {
+      "Type": "Pass",
+      "Next": "ProcessRefund",
+      "InputPath": "$[1].paymentDetail.paymentAmount",
+      "ResultPath": "$[0].paymentDetail.paymentAmount"
+    },
+    "FailedAllPass": {
+      "Type": "Pass",
+      "InputPath": "$.[1]",
+      "Next": "CancelOrder"
     },
     "CompleteOrder": {
       "Comment": "Task sets the order status to completed.",
@@ -229,8 +240,7 @@
           "Next": "sns:NotifyCancelOrderFail"
         }
       ],
-      "Next": "OrderCallback",
-      "InputPath": "$[0]"
+      "Next": "OrderCallback"
     },
     "sns:NotifyCancelOrderFail": {
       "Type": "Task",

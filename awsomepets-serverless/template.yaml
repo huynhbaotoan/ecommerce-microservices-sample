@@ -250,7 +250,7 @@ Resources:
                     ORDERS_TABLE: !Ref OrdersTable
                     WS_API_STAGE: !Ref StageName
                     WS_API_URL: !Sub "wss://${CallbackWSAPI}.execute-api.${AWS::Region}.amazonaws.com"
-                    ORDER_ORCHESTRATOR_ARN: !GetAtt StepFunctionsStateMachine.Arn
+                    ORDER_ORCHESTRATOR_ARN: !GetAtt ParallelStepFunctionsStateMachine.Arn
             FunctionName: "CreateOrderFunction"
             Handler: "index.handler"
             CodeUri: src/order/CreateOrderFunction/
@@ -261,7 +261,7 @@ Resources:
                 - DynamoDBCrudPolicy:
                       TableName: !Ref OrdersTable
                 - StepFunctionsExecutionPolicy:
-                      StateMachineName: !GetAtt StepFunctionsStateMachine.Name
+                      StateMachineName: !GetAtt ParallelStepFunctionsStateMachine.Name
     
     UpdateInventoryFunction:
         Type: "AWS::Serverless::Function"
