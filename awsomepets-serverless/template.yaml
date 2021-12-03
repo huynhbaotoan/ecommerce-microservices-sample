@@ -262,6 +262,28 @@ Resources:
                       TableName: !Ref OrdersTable
                 - StepFunctionsExecutionPolicy:
                       StateMachineName: !GetAtt ParallelStepFunctionsStateMachine.Name
+
+    CreateOrderWithoutCallbackFunction:
+        Type: "AWS::Serverless::Function"
+        Properties:
+            Description: "Create a new order and trigger the Order Saga transaction in testing"
+            Environment:
+                Variables:
+                    ORDERS_TABLE: !Ref OrdersTable
+                    WS_API_STAGE: !Ref StageName
+                    WS_API_URL: !Sub "wss://${CallbackWSAPI}.execute-api.${AWS::Region}.amazonaws.com"
+                    ORDER_ORCHESTRATOR_ARN: !GetAtt ParallelTestStepFunctionsStateMachine.Arn
+            FunctionName: "CreateOrderWithoutCallbackFunction"
+            Handler: "index.handler"
+            CodeUri: src/order/CreateOrderWithoutCallbackFunction/
+            MemorySize: 128
+            Runtime: "nodejs12.x"
+            Timeout: 3
+            Policies:
+                - DynamoDBCrudPolicy:
+                      TableName: !Ref OrdersTable
+                - StepFunctionsExecutionPolicy:
+                      StateMachineName: !GetAtt ParallelTestStepFunctionsStateMachine.Name
     
     UpdateInventoryFunction:
         Type: "AWS::Serverless::Function"
@@ -674,6 +696,49 @@ Resources:
                       TopicName: !GetAtt OrderSagaFailTopic.TopicName
                 - CloudWatchLogsFullAccess
 
+    ParallelTestStepFunctionsStateMachineLogs:
+        Type: AWS::Logs::LogGroup
+
+    ParallelTestStepFunctionsStateMachine:
+        Type: "AWS::Serverless::StateMachine"
+        Properties:
+            Name: "ParallelTestOrderOrchestrator"
+            DefinitionUri: statemachine/order-orchestrator-parallel-test.asl.json
+            DefinitionSubstitutions:
+                UpdateInventoryFunctionArn: !GetAtt UpdateInventoryFunction.Arn
+                ReleaseInventoryNewFunctionArn: !GetAtt ReleaseInventoryNewFunction.Arn
+                ProcessPaymentFunctionArn: !GetAtt ProcessPaymentFunction.Arn
+                ProcessRefundFunctionArn: !GetAtt ProcessRefundFunction.Arn
+                CompleteOrderFunctionArn: !GetAtt CompleteOrderFunction.Arn
+                CancelOrderFunctionArn: !GetAtt CancelOrderFunction.Arn
+                OrderWSCallbackFunctionArn: !GetAtt OrderWSCallbackFunction.Arn
+                OrderSagaFailTopicArn: "arn:aws:sns:${AWS::Region}:${AWS::AccountId}:${OrderSagaFailTopic.TopicName}"
+            Type: "STANDARD"
+            Logging:
+                Destinations:
+                    - CloudWatchLogsLogGroup: 
+                            LogGroupArn: !GetAtt ParallelTestStepFunctionsStateMachineLogs.Arn
+                IncludeExecutionData: true
+                Level: "ALL"
+            Policies:
+                - LambdaInvokePolicy:
+                      FunctionName: !Ref UpdateInventoryFunction
+                - LambdaInvokePolicy:
+                      FunctionName: !Ref ReleaseInventoryNewFunction
+                - LambdaInvokePolicy:
+                      FunctionName: !Ref ProcessPaymentFunction
+                - LambdaInvokePolicy:
+                      FunctionName: !Ref ProcessRefundFunction
+                - LambdaInvokePolicy:
+                      FunctionName: !Ref CompleteOrderFunction
+                - LambdaInvokePolicy:
+                      FunctionName: !Ref CancelOrderFunction
+                - LambdaInvokePolicy:
+                      FunctionName: !Ref OrderWSCallbackFunction
+                - SNSPublishMessagePolicy:
+                      TopicName: !GetAtt OrderSagaFailTopic.TopicName
+                - CloudWatchLogsFullAccess
+
     ApiGatewayConfig:
         Type: "AWS::ApiGateway::Account"
         Properties:
@@ -795,11 +860,85 @@ Resources:
                 TimeoutInMillis: 29000
                 Type: "MOCK"
 
+
+
+    OrderTestRESTResource:
+        Type: "AWS::ApiGateway::Resource"
+        Properties:
+            RestApiId: !Ref OrderRESTAPI
+            PathPart: "ordertest"
+            ParentId: !GetAtt OrderRESTAPI.RootResourceId
+
+    OrderTestRESTPostMethod:
+        Type: "AWS::ApiGateway::Method"
+        Properties:
+            RestApiId: !Ref OrderRESTAPI
+            ResourceId: !Ref OrderTestRESTResource
+            HttpMethod: "POST"
+            AuthorizationType: "NONE"
+            ApiKeyRequired: false
+            RequestParameters: { }
+            MethodResponses:
+                - ResponseModels:
+                      "application/json": "Empty"
+                  ResponseParameters:
+                      "method.response.header.Access-Control-Allow-Headers": false
+                      "method.response.header.Access-Control-Allow-Methods": false
+                      "method.response.header.Access-Control-Allow-Origin": false
+                  StatusCode: "200"
+            Integration:
+                CacheNamespace: !Ref OrderRESTResource
+                ContentHandling: "CONVERT_TO_TEXT"
+                IntegrationHttpMethod: "POST"
+                IntegrationResponses:
+                    - ResponseParameters:
+                          "method.response.header.Access-Control-Allow-Origin": "'*'"
+                      ResponseTemplates: { }
+                      StatusCode: "200"
+                PassthroughBehavior: "WHEN_NO_MATCH"
+                TimeoutInMillis: 29000
+                Type: "AWS"
+                Uri: !Sub "arn:aws:apigateway:${AWS::Region}:lambda:path/2015-03-31/functions/arn:aws:lambda:${AWS::Region}:${AWS::AccountId}:function:${CreateOrderWithoutCallbackFunction}/invocations"
+
+    OrderTestRESTOptionsMethod:
+        Type: "AWS::ApiGateway::Method"
+        Properties:
+            RestApiId: !Ref OrderRESTAPI
+            ResourceId: !Ref OrderTestRESTResource
+            HttpMethod: "OPTIONS"
+            AuthorizationType: "NONE"
+            ApiKeyRequired: false
+            RequestParameters: { }
+            MethodResponses:
+                - ResponseModels:
+                      "application/json": "Empty"
+                  ResponseParameters:
+                      "method.response.header.Access-Control-Allow-Headers": false
+                      "method.response.header.Access-Control-Allow-Methods": false
+                      "method.response.header.Access-Control-Allow-Origin": false
+                  StatusCode: "200"
+            Integration:
+                CacheNamespace: !Ref OrderRESTResource
+                IntegrationResponses:
+                    - ResponseParameters:
+                          "method.response.header.Access-Control-Allow-Headers": "'Content-Type,X-Amz-Date,Authorization,X-Api-Key,X-Amz-Security-Token'"
+                          "method.response.header.Access-Control-Allow-Methods": "'OPTIONS,POST'"
+                          "method.response.header.Access-Control-Allow-Origin": "'*'"
+                      ResponseTemplates: { }
+                      StatusCode: "200"
+                PassthroughBehavior: "WHEN_NO_MATCH"
+                RequestTemplates:
+                    "application/json": "{\"statusCode\": 200}"
+                TimeoutInMillis: 29000
+                Type: "MOCK"
+
     OrderRESTDeployment:
         Type: "AWS::ApiGateway::Deployment"
         DependsOn:
             - OrderRESTPostMethod
             - OrderRESTOptionsMethod
+            - OrderTestRESTPostMethod
+            - OrderTestRESTOptionsMethod
         Properties:
             RestApiId: !Ref OrderRESTAPI
 
@@ -939,6 +1078,16 @@ Resources:
         Properties:
             Action: lambda:InvokeFunction
             FunctionName: !Ref CreateOrderFunction
+            Principal: apigateway.amazonaws.com
+
+    CreateOrderWithoutCallbackAPIPermission:
+        Type: "AWS::Lambda::Permission"
+        DependsOn:
+            - OrderRESTAPI
+            - CreateOrderWithoutCallbackFunction
+        Properties:
+            Action: lambda:InvokeFunction
+            FunctionName: !Ref CreateOrderWithoutCallbackFunction
             Principal: apigateway.amazonaws.com
 
     CatalogueAPIPermission:

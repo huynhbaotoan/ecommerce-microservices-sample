@@ -3,3 +3,4 @@ awsomepets-serverless/.aws-sam/*
 awsomepets-serverless/src/order/ProcessPaymentFunction/node_modules/*
 awsomepets-serverless/package-lock.json
 awsomepets-serverless/src/order/ProcessPaymentFunction/package-lock.json
+test/__pycache__/locustfile.cpython-39.pyc
