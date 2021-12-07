@@ -272,18 +272,18 @@ Resources:
                     ORDERS_TABLE: !Ref OrdersTable
                     WS_API_STAGE: !Ref StageName
                     WS_API_URL: !Sub "wss://${CallbackWSAPI}.execute-api.${AWS::Region}.amazonaws.com"
-                    ORDER_ORCHESTRATOR_ARN: !GetAtt ParallelTestStepFunctionsStateMachine.Arn
+                    ORDER_ORCHESTRATOR_ARN: !GetAtt TestStepFunctionsStateMachine.Arn
             FunctionName: "CreateOrderWithoutCallbackFunction"
             Handler: "index.handler"
             CodeUri: src/order/CreateOrderWithoutCallbackFunction/
             MemorySize: 128
             Runtime: "nodejs12.x"
-            Timeout: 3
+            Timeout: 15
             Policies:
                 - DynamoDBCrudPolicy:
                       TableName: !Ref OrdersTable
                 - StepFunctionsExecutionPolicy:
-                      StateMachineName: !GetAtt ParallelTestStepFunctionsStateMachine.Name
+                      StateMachineName: !GetAtt TestStepFunctionsStateMachine.Name
     
     UpdateInventoryFunction:
         Type: "AWS::Serverless::Function"
@@ -718,6 +718,49 @@ Resources:
                 Destinations:
                     - CloudWatchLogsLogGroup: 
                             LogGroupArn: !GetAtt ParallelTestStepFunctionsStateMachineLogs.Arn
+                IncludeExecutionData: true
+                Level: "ALL"
+            Policies:
+                - LambdaInvokePolicy:
+                      FunctionName: !Ref UpdateInventoryFunction
+                - LambdaInvokePolicy:
+                      FunctionName: !Ref ReleaseInventoryNewFunction
+                - LambdaInvokePolicy:
+                      FunctionName: !Ref ProcessPaymentFunction
+                - LambdaInvokePolicy:
+                      FunctionName: !Ref ProcessRefundFunction
+                - LambdaInvokePolicy:
+                      FunctionName: !Ref CompleteOrderFunction
+                - LambdaInvokePolicy:
+                      FunctionName: !Ref CancelOrderFunction
+                - LambdaInvokePolicy:
+                      FunctionName: !Ref OrderWSCallbackFunction
+                - SNSPublishMessagePolicy:
+                      TopicName: !GetAtt OrderSagaFailTopic.TopicName
+                - CloudWatchLogsFullAccess
+
+    TestStepFunctionsStateMachineLogs:
+        Type: AWS::Logs::LogGroup
+
+    TestStepFunctionsStateMachine:
+        Type: "AWS::Serverless::StateMachine"
+        Properties:
+            Name: "TestOrderOrchestrator"
+            DefinitionUri: statemachine/order-orchestrator-test.asl.json
+            DefinitionSubstitutions:
+                UpdateInventoryFunctionArn: !GetAtt UpdateInventoryFunction.Arn
+                ReleaseInventoryNewFunctionArn: !GetAtt ReleaseInventoryNewFunction.Arn
+                ProcessPaymentFunctionArn: !GetAtt ProcessPaymentFunction.Arn
+                ProcessRefundFunctionArn: !GetAtt ProcessRefundFunction.Arn
+                CompleteOrderFunctionArn: !GetAtt CompleteOrderFunction.Arn
+                CancelOrderFunctionArn: !GetAtt CancelOrderFunction.Arn
+                OrderWSCallbackFunctionArn: !GetAtt OrderWSCallbackFunction.Arn
+                OrderSagaFailTopicArn: "arn:aws:sns:${AWS::Region}:${AWS::AccountId}:${OrderSagaFailTopic.TopicName}"
+            Type: "STANDARD"
+            Logging:
+                Destinations:
+                    - CloudWatchLogsLogGroup: 
+                            LogGroupArn: !GetAtt TestStepFunctionsStateMachineLogs.Arn
                 IncludeExecutionData: true
                 Level: "ALL"
             Policies:
